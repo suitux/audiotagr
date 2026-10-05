@@ -1,6 +1,6 @@
 {
   "name": "audiotagr",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Read and write audio file tags (ID3v2, Xiph, iTunes/MP4, ASF, APEv2) through one format-agnostic API, plus a streaming folder scanner.",
   "keywords": [
     "audio",
