@@ -1,9 +1,11 @@
 import { AudioMetadataPatch } from '../../tags/domain'
+import * as ape from '../formats/ape'
 import * as apple from '../formats/apple'
 import * as asf from '../formats/asf'
 import { writeToAllNativeTags, writeToNonId3v2 } from '../formats/fan-out'
 import * as id3v2 from '../formats/id3v2'
 import * as xiph from '../formats/xiph'
+import { splitMultiValue } from '../../shared/multi-value'
 import { TagContext } from '../tag-context'
 import { asOptionalText, asText } from './normalize'
 
@@ -25,6 +27,19 @@ export function writeNativeFields(ctx: TagContext, patch: AudioMetadataPatch) {
   if (patch.catalogNumber !== undefined)
     writeToAllNativeTags(ctx, 'CATALOGNUMBER', asOptionalText(patch.catalogNumber))
   if (patch.work !== undefined) writeToAllNativeTags(ctx, 'WORK', asOptionalText(patch.work))
+
+  // Release type: no common field name, so each format gets the key Picard
+  // (and every MusicBrainz-aware reader) uses. ID3v2, Xiph and iTunes keep each
+  // type as its own value, so readers that don't split on ";" still see them.
+  if (patch.releaseType !== undefined) {
+    const releaseType = asOptionalText(patch.releaseType)
+    const releaseTypes = splitMultiValue(releaseType)
+    if (ctx.id3v2) id3v2.setTxxxValues(ctx.id3v2, 'MusicBrainz Album Type', releaseTypes)
+    if (ctx.xiph) xiph.setFieldValues(ctx.xiph, 'RELEASETYPE', releaseTypes)
+    if (ctx.apple) apple.setItunesValues(ctx.apple, 'MusicBrainz Album Type', releaseTypes)
+    if (ctx.asf) asf.setDescriptor(ctx.asf, 'MusicBrainz/Album Type', releaseType)
+    if (ctx.ape) ape.setItem(ctx.ape, 'MUSICBRAINZ_ALBUMTYPE', releaseType)
+  }
 
   // Publisher: convenience property plus native overrides — Xiph calls it LABEL,
   // and iTunes/ASF need their own descriptors.

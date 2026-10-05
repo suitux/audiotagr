@@ -33,6 +33,7 @@ export function mapAudioTags(common: ICommonTagsResult, native: NativeTagMap | u
     grouping: common.grouping || null,
     publisher: joinMultiValue(common.label ?? []) || getNativeTagValue(native, 'PUBLISHER') || null,
     catalogNumber: joinMultiValue(common.catalognumber ?? []) || null,
+    releaseType: joinMultiValue(common.releasetype ?? []) || null,
     lyricist: joinMultiValue(common.lyricist ?? []) || null,
     barcode: common.barcode || null,
     work: common.work || getNativeTagValue(native, 'WORK') || getNativeTagValue(native, 'TXXX:WORK') || null,

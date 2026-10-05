@@ -10,3 +10,8 @@ export function setItunesField(apple: Mpeg4AppleTag, key: string, value: string 
     apple.setItunesStrings(ITUNES_MEAN, key)
   }
 }
+
+/** Set an iTunes `----:com.apple.iTunes:<key>` atom to explicit values, one data atom each. */
+export function setItunesValues(apple: Mpeg4AppleTag, key: string, values: string[]) {
+  apple.setItunesStrings(ITUNES_MEAN, key, ...values)
+}

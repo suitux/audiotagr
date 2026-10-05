@@ -1,6 +1,7 @@
 import fs from 'fs/promises'
 import os from 'os'
 import path from 'path'
+import { parseFile } from 'music-metadata'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { readAudioMetadata } from '../../src/read/read-audio-metadata'
 import { splitMultiValue } from '../../src/shared/multi-value'
@@ -76,6 +77,13 @@ describe.each(ALL_FORMATS)('%s', name => {
     expect(meta.style).toBe('acoustic')
   })
 
+  it('round-trips a multi-value release type', async () => {
+    const meta = await writeAndRead(name, { releaseType: 'album;live' })
+
+    expect(splitMultiValue(meta.releaseType?.replace(/;\s+/g, ';'))).toEqual(['album', 'live'])
+    expect(meta.customTags.some(t => /album ?type|releasetype/i.test(t.key))).toBe(false)
+  })
+
   it('round-trips custom tags', async () => {
     const meta = await writeAndRead(name, {
       customTags: [{ key: 'MOOD', value: 'calm' }]
@@ -126,5 +134,26 @@ describe.each(['sample.mp3', 'sample.flac', 'sample.ogg', 'sample.opus'])('%s ra
 
     expect(meta.rating).toBeGreaterThan(70)
     expect(meta.rating).toBeLessThanOrEqual(100)
+  })
+})
+
+// Release type is written as separate values (not one ";"-joined string) where
+// the format supports it, so readers that don't split on ";" see each type.
+describe.each(['sample.mp3', 'sample.flac', 'sample.m4a', 'sample.ogg', 'sample.opus'])('%s release type', name => {
+  it('stores each release type as its own value', async () => {
+    const filePath = await fixture(name)
+    await writeAudioMetadata(filePath, { releaseType: 'album;live' })
+
+    const { common } = await parseFile(filePath)
+    expect(common.releasetype).toEqual(['album', 'live'])
+    expect((await readAudioMetadata(filePath)).releaseType).toBe('album;live')
+  })
+
+  it('clears the release type', async () => {
+    const filePath = await fixture(name)
+    await writeAudioMetadata(filePath, { releaseType: 'album;live' })
+    await writeAudioMetadata(filePath, { releaseType: null })
+
+    expect((await readAudioMetadata(filePath)).releaseType).toBeNull()
   })
 })

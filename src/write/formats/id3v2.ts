@@ -25,6 +25,20 @@ export function setTxxx(id3v2: Id3v2Tag, description: string, value: string | un
   }
 }
 
+/**
+ * Set a `TXXX:<description>` frame to explicit values. ID3v2.4 stores them
+ * null-separated in a single frame, the way Picard writes multi-value tags.
+ */
+export function setTxxxValues(id3v2: Id3v2Tag, description: string, values: string[]) {
+  setTxxx(id3v2, description, undefined)
+
+  if (values.length > 0) {
+    const frame = Id3v2UserTextInformationFrame.fromDescription(description)
+    frame.text = values
+    id3v2.addFrame(frame)
+  }
+}
+
 /** Lyricist lives in the standard `TEXT` frame rather than a TXXX frame. */
 export function setLyricist(id3v2: Id3v2Tag, value: string | undefined) {
   id3v2.setTextFrame(Id3v2FrameIdentifiers.TEXT, ...(value ? [value] : []))
