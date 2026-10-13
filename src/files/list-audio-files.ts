@@ -6,6 +6,11 @@ import { isMusicFile } from './music-file'
 export interface ListAudioFilesOptions {
   /** Called for each directory that cannot be read; traversal continues. */
   onError?: (dirPath: string, error: string) => void
+  /**
+   * Decide whether a subdirectory is left out of the walk — e.g. NAS system
+   * folders like Synology's `@eaDir`. Never called for `folderPath` itself.
+   */
+  shouldSkipDirectory?: (dirPath: string, name: string) => boolean
 }
 
 /**
@@ -29,6 +34,7 @@ export async function listAudioFiles(folderPath: string, options: ListAudioFiles
       const fullPath = path.join(dirPath, entry.name)
 
       if (entry.isDirectory()) {
+        if (options.shouldSkipDirectory?.(fullPath, entry.name)) continue
         await scanDir(fullPath)
       } else if (entry.isFile() && isMusicFile(entry.name)) {
         files.push(fullPath)

@@ -14,9 +14,9 @@ import { ScanItem, ScanOptions } from './domain'
  * loop and forces a GC pass to release cover-art buffers.
  */
 export async function* scanFolder(folderPath: string, options: ScanOptions = {}): AsyncGenerator<ScanItem> {
-  const { batchSize = DEFAULT_SCAN_BATCH_SIZE, shouldSkip, onDirectoryError, signal } = options
+  const { batchSize = DEFAULT_SCAN_BATCH_SIZE, shouldSkip, shouldSkipDirectory, onDirectoryError, signal } = options
 
-  const files = await listAudioFiles(folderPath, { onError: onDirectoryError })
+  const files = await listAudioFiles(folderPath, { onError: onDirectoryError, shouldSkipDirectory })
   const total = files.length
 
   for (let i = 0; i < total; i++) {

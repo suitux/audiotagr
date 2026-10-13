@@ -75,7 +75,7 @@ for await (const item of scanFolder('/music', {
 }
 ```
 
-Options: `batchSize` (default 100), `shouldSkip`, `onDirectoryError`, `signal`. Unreadable directories are reported and skipped rather than aborting the walk. `scanFolders(paths)` does the same across several roots and tags each item with its `folder`.
+Options: `batchSize` (default 100), `shouldSkip`, `shouldSkipDirectory` (leave a subdirectory out of the walk, e.g. `@eaDir`), `onDirectoryError`, `signal`. Unreadable directories are reported and skipped rather than aborting the walk. `scanFolders(paths)` does the same across several roots and tags each item with its `folder`.
 
 ## Browser-safe subset
 

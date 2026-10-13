@@ -123,6 +123,20 @@ describe('items', () => {
     expect(items.map(i => i.filePath)).toEqual(['/music/song.mp3'])
   })
 
+  it('does not walk directories rejected by shouldSkipDirectory', async () => {
+    const dir = (name: string) => ({ name, isDirectory: () => true, isFile: () => false })
+    mockReaddir.mockImplementation(async (dirPath: string) =>
+      dirPath === '/music' ? [dir('@eaDir'), dir('Album'), dirent('root.mp3')] : [dirent('song.mp3')]
+    )
+    const shouldSkipDirectory = vi.fn((_dirPath: string, name: string) => name === '@eaDir')
+
+    const items = await collect(scanFolder('/music', { shouldSkipDirectory }))
+
+    expect(items.map(i => i.filePath)).toEqual(['/music/Album/song.mp3', '/music/root.mp3'])
+    expect(shouldSkipDirectory).toHaveBeenCalledWith('/music/@eaDir', '@eaDir')
+    expect(mockReaddir).not.toHaveBeenCalledWith('/music/@eaDir', expect.anything())
+  })
+
   it('aborts between files when the signal fires', async () => {
     mockReaddir.mockResolvedValue([dirent('a.mp3'), dirent('b.mp3')])
     const controller = new AbortController()

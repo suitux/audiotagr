@@ -44,6 +44,11 @@ export interface ScanOptions {
    * its mtime matches what the consumer already stored.
    */
   shouldSkip?: (filePath: string, stats: Stats) => boolean | Promise<boolean>
+  /**
+   * Decide whether a subdirectory is left out of the scan entirely — e.g. NAS
+   * system folders like Synology's `@eaDir`. Never called for the scanned root.
+   */
+  shouldSkipDirectory?: (dirPath: string, name: string) => boolean
   /** Called for each directory that cannot be read; traversal continues. */
   onDirectoryError?: (dirPath: string, error: string) => void
   /** Aborts the scan between files. */
