@@ -1,4 +1,6 @@
 allowBuilds:
   esbuild: true
+minimumReleaseAgeExclude:
+  - music-metadata@12.4.0
 onlyBuiltDependencies:
   - esbuild
