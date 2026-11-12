@@ -2,13 +2,13 @@
 
 Read and write audio file tags from Node with one format-agnostic API, plus a streaming folder scanner.
 
-Under the hood it reads with [`music-metadata`](https://github.com/borewit/music-metadata) and writes with [`node-taglib-sharp`](https://github.com/benrr101/node-taglib-sharp), and papers over the differences between ID3v2, Vorbis comments, iTunes/MP4 atoms, ASF/WMA descriptors and APEv2 items — including the ones that silently corrupt a round-trip if you use the convenience setters directly.
+Under the hood it reads and writes with [`music-metadata`](https://github.com/borewit/music-metadata), and papers over the differences between ID3v2.4, Vorbis comments and iTunes/MP4 atoms — including the ones that silently corrupt a round-trip if you use the convenience setters directly.
 
 ```bash
 npm install audiotagr
 ```
 
-Requires Node 20+. ESM only.
+Requires Node 22+. ESM only.
 
 ## Reading
 
@@ -24,7 +24,7 @@ meta.style //=> 'acoustic'
 meta.rating //=> 80             always 0-100, whatever the format's native scale
 meta.customTags //=> [{ key: 'vorbis:MOOD', value: 'calm' }]
 meta.pictures //=> [{ type, format, description, data }]
-meta.duration, meta.bitrate, meta.codec, meta.lossless
+// meta.duration, meta.bitrate, meta.codec, meta.lossless
 ```
 
 Dates come back as the raw tag string (`originalReleaseDate: '1998-05-04'`) — parse them with whatever your app already uses.
@@ -42,13 +42,16 @@ await writeAudioMetadata('/music/song.flac', {
   style: 'acoustic',
   bpm: 128,
   rating: 80,
-  customTags: [{ key: 'MOOD', value: 'calm' }, { key: 'OLD_TAG', value: null }]
+  customTags: [
+    { key: 'MOOD', value: 'calm' },
+    { key: 'OLD_TAG', value: null }
+  ]
 })
 
 await writeAudioPicture('/music/song.flac', pngBuffer, 'image/png')
 ```
 
-Each field is written to every tag the file carries, using the name that format's readers actually look for: `TXXX:STYLE` in ID3v2, `STYLE` in Vorbis, `----:com.apple.iTunes:STYLE` in MP4, `WM/*` descriptors in ASF, and so on.
+Each field is written using the name that format's readers actually look for: `TXXX:STYLE` in ID3v2.4, `STYLE` in Vorbis, and `----:com.apple.iTunes:STYLE` in MP4. Writes are atomic by default: the writer rebuilds the metadata, streams the encoded audio unchanged into a sibling temporary file, and renames it into place.
 
 ## Scanning a library
 
@@ -88,15 +91,30 @@ import type { AudioFileMetadata, AudioMetadataPatch } from 'audiotagr/tags'
 
 ## Supported files
 
-`.mp3 .flac .wav .aac .ogg .m4a .m4b .wma .aiff .opus`
+Reading supports `.mp3 .flac .wav .aac .ogg .m4a .m4b .wma .aiff .opus`.
+
+Writing supports:
+
+| Container       | Extensions             | Tag format                                    |
+| --------------- | ---------------------- | --------------------------------------------- |
+| FLAC            | `.flac`                | Vorbis Comments and native FLAC pictures      |
+| Ogg Vorbis/Opus | `.ogg`, `.opus`        | Vorbis Comments and embedded pictures         |
+| MP3             | `.mp3`                 | ID3v2.4; creates a tag on untagged MPEG audio |
+| WAV             | `.wav`                 | ID3v2.4 in a RIFF/WAVE `id3 ` chunk           |
+| MP4/M4A/M4B     | `.m4a`, `.m4b`, `.mp4` | iTunes-style metadata                         |
+
+`.wma`, `.aiff` and raw `.aac` remain readable, but are not writable.
 
 ## Notes on round-trips
 
-- **BPM in Vorbis comments** is written to `BPM` (taglib's default is `TEMPO`, which readers do not surface as BPM).
+- **ID3v2.4 output.** ID3v2.2 and ID3v2.3 tags are read and normalized to ID3v2.4 on write. Fields this package models are preserved; frames the reader does not expose, and a trailing ID3v1 tag, are lost when the old tag is replaced.
+- **One tag section per file.** The writer writes the canonical tag section for the container (ID3v2.4, Vorbis Comments or iTunes items). Unlike the old TagLib writer, it does not fan a field out to every tag type present or write ASF/APEv2 tags.
+- **BPM in Vorbis comments** is written to `BPM`, the field readers surface as BPM.
 - **Style vs Genre**: parsers fold STYLE frames into the same field as the genre frame. This package pulls them apart on read and keeps them apart on write.
-- **Multi-value fields** are flattened with `;`. MP4 and ASF only store one string per field, so they come back joined with `; `.
-- **Rating** is exposed as 0-100 and stored as POPM (1-255) in ID3v2, as a plain number elsewhere.
+- **Multi-value fields** are flattened with `;`. MP4 only stores one string per field, so they come back joined with `; `.
+- **Rating** is exposed as 0-100 and stored as POPM (1-255) in ID3v2.4 and as a plain number in Vorbis comments. MP4 keeps the iTunes `RATING` freeform item, which most readers do not surface as a common rating.
 - **ID3v2.2 `TXX` frames** embed the description in the value; they are normalized to the `TXXX` shape (`ID3v2.2:TXX:MOOD`).
+- **Atomic writes** require write access to the file's directory. This is the default for every format. With `atomic: false`, MP3/FLAC/WAV stage in memory, while MP4 and Ogg still use a sibling temporary file and therefore still need directory write access.
 
 ## Contributing
 

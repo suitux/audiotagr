@@ -4,6 +4,7 @@
     "lib": ["ES2022"],
     "module": "ESNext",
     "moduleResolution": "bundler",
+    "customConditions": ["node"],
     "types": ["node"],
     "strict": true,
     "noUncheckedIndexedAccess": false,

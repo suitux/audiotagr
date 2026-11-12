@@ -32,7 +32,7 @@ afterAll(async () => {
   expect(await hashFixtures()).toEqual(before)
 })
 
-it('has a fixture for every format the write tests cover', () => {
+it('has a fixture for every checked-in sample format', () => {
   expect(Object.keys(before)).toEqual([
     'sample.flac',
     'sample.m4a',

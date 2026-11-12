@@ -6,7 +6,7 @@ export interface NativeTag {
   value: unknown
 }
 
-/** Native tags grouped by tag format (`ID3v2.4`, `vorbis`, `iTunes MP4`…). */
+/** Native tags grouped by tag format (`ID3v2.4`, `vorbis`, `iTunes`…). */
 export type NativeTagMap = Record<string, NativeTag[]>
 
 /** Filesystem facts about the audio file, independent of its tags. */
